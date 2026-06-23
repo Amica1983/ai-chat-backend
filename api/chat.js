@@ -13,6 +13,13 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // 🚨 DEBUG ENV (САМОЕ ВАЖНОЕ)
+  console.log("ENV TEST:", {
+    key: process.env.OPENAI_API_KEY,
+    project: process.env.OPENAI_PROJECT_ID,
+    prompt: process.env.YANDEX_PROMPT_ID
+  });
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -46,10 +53,8 @@ export default async function handler(req, res) {
       ]
     });
 
-    const answer = response.choices?.[0]?.message?.content;
-
     return res.status(200).json({
-      answer: answer || "Нет ответа от модели"
+      answer: response.choices?.[0]?.message?.content
     });
 
   } catch (error) {
