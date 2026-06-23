@@ -13,6 +13,10 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -22,23 +26,38 @@ export default async function handler(req, res) {
       }
     });
 
-    const { message } = req.body;
+    const message = req.body?.message;
 
-    const response = await client.responses.create({
-      prompt: {
-        id: process.env.YANDEX_PROMPT_ID
-      },
-      input: message
+    if (!message) {
+      return res.status(400).json({ error: "No message provided" });
+    }
+
+    const response = await client.chat.completions.create({
+      model: "gpt",
+      messages: [
+        {
+          role: "system",
+          content: "Ты AI-помощник Аллы по услугам GetCourse"
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ]
     });
 
-    res.status(200).json({
-      answer: response.output_text
+    const answer = response.choices?.[0]?.message?.content;
+
+    return res.status(200).json({
+      answer: answer || "Нет ответа от модели"
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      error: "AI request failed"
+    console.error("AI ERROR:", error);
+
+    return res.status(500).json({
+      error: "AI request failed",
+      details: error.message
     });
   }
 }
